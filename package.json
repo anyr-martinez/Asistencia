@@ -7,12 +7,16 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.1.0",
     "@testing-library/user-event": "^13.2.1",
+    "firebase": "^12.2.1",
+    "lucide-react": "^0.544.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-hot-toast": "^2.6.0",
     "react-scripts": "5.0.1",
     "web-vitals": "^2.1.0"
   },
   "scripts": {
+    "tailwind:init": "tailwindcss init -p",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
@@ -35,5 +39,9 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6"
   }
 }
