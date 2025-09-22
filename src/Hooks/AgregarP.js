@@ -10,10 +10,25 @@ const departamentosHonduras = [
   "Santa Bárbara", "Valle", "Yoro"
 ];
 
+const tiposParticipante = [
+  "Cliente",
+  "Empleado",
+  "Proveedor",
+  "Agroservicio",
+  "Otros"
+];
+
 // Custom Control para React Select con icono al principio
 const CustomControl = (props) => (
   <components.Control {...props}>
     <MapPin className="text-gray-400 w-5 h-5 ml-3 mr-2" />
+    {props.children}
+  </components.Control>
+);
+
+const CustomTipoControl = (props) => (
+  <components.Control {...props}>
+    <Briefcase className="text-gray-400 w-5 h-5 ml-3 mr-2" />
     {props.children}
   </components.Control>
 );
@@ -107,7 +122,7 @@ const AgregarP = ({ isOpen, onClose, onAgregar }) => {
     setDatos({ ...datos, telefono: value });
   };
 
-  const handleAgregar = () => {
+    const handleAgregar = () => {
     if (!datos.nombre || !datos.departamento || !datos.tipo || !datos.telefono) {
       toast.error("Debe completar todos los campos.");
       return;
@@ -118,6 +133,7 @@ const AgregarP = ({ isOpen, onClose, onAgregar }) => {
     }
     const participante = {
       ...datos,
+      telefono: datos.telefono.replace("-", ""), 
       fecha: new Date().toISOString()
     };
     onAgregar(participante);
@@ -206,12 +222,20 @@ const AgregarP = ({ isOpen, onClose, onAgregar }) => {
               Tipo de Participante
             </label>
             <div className="relative">
-              <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
-                placeholder="Cliente, Empleado, Proveedor, Agroservicio, Otros..."
-                value={datos.tipo}
-                onChange={e => setDatos({ ...datos, tipo: e.target.value })}
+              <Select
+                options={tiposParticipante.map(tipo => ({ value: tipo, label: tipo }))}
+                value={
+                  datos.tipo
+                    ? { value: datos.tipo, label: datos.tipo }
+                    : null
+                }
+                onChange={option =>
+                  setDatos({ ...datos, tipo: option ? option.value : "" })
+                }
+                placeholder="Seleccione un tipo"
+                menuPlacement="auto"
+                styles={customSelectStyles}
+                components={{ Control: CustomTipoControl }}
               />
             </div>
           </div>
