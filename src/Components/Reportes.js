@@ -1,31 +1,60 @@
 import React, { useState } from "react";
+import { Filter, Search, Tag, MapPin, Eye, Users, Download, Phone, Calendar } from "lucide-react";
+
+const departamentosHonduras = [
+  "Atlántida", "Choluteca", "Colón", "Comayagua", "Copán", "Cortés",
+  "El Paraíso", "Francisco Morazán", "Gracias a Dios", "Intibucá", "Islas de la Bahía",
+  "La Paz", "Lempira", "Ocotepeque", "Olancho", "Santa Bárbara", "Valle", "Yoro"
+];
+
+const tiposFijos = ["Todos", "Cliente", "Empleado", "Agroservicio", "Proveedor", "Otros"];
+
+const formatearFecha = (fecha) => {
+  if (!fecha) return 'Sin fecha';
+  let dateObj;
+  if (fecha.seconds) {
+    dateObj = new Date(fecha.seconds * 1000);
+  } else {
+    dateObj = new Date(fecha);
+  }
+  const dia = String(dateObj.getDate()).padStart(2, '0');
+  const mes = String(dateObj.getMonth() + 1).padStart(2, '0');
+  const anio = dateObj.getFullYear();
+  return `${dia}/${mes}/${anio}`;
+};
 
 const Reportes = ({ participantes }) => {
   const [filtroTipo, setFiltroTipo] = useState('Todos');
   const [filtroDepartamento, setFiltroDepartamento] = useState('Todos');
   const [filtroAsistencia, setFiltroAsistencia] = useState('Todos');
-
-  const tipos = ['Todos', ...new Set(participantes.map(p => p.tipo))];
-  const departamentos = ['Todos', ...new Set(participantes.map(p => p.departamento))];
+  const [busqueda, setBusqueda] = useState("");
 
   const participantesFiltrados = participantes.filter(p => {
     return (filtroTipo === 'Todos' || p.tipo === filtroTipo) &&
            (filtroDepartamento === 'Todos' || p.departamento === filtroDepartamento) &&
            (filtroAsistencia === 'Todos' || 
             (filtroAsistencia === 'Presentes' && p.asistencia === 'Activo') ||
-            (filtroAsistencia === 'Ausentes' && p.asistencia === 'No Activo'));
+            (filtroAsistencia === 'Ausentes' && p.asistencia === 'No Activo')) &&
+           (
+             p.nombre?.toLowerCase().includes(busqueda.toLowerCase()) ||
+             p.telefono?.includes(busqueda) ||
+             p.departamento?.toLowerCase().includes(busqueda.toLowerCase())
+           );
   });
 
+  const participantesOrdenados = [...participantesFiltrados].sort((a, b) =>
+    a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
+  );
+
   const exportarExcel = () => {
-    const datosExport = participantesFiltrados.map(p => ({
+    if (participantesOrdenados.length === 0) return;
+    const datosExport = participantesOrdenados.map(p => ({
       Nombre: p.nombre,
       Teléfono: p.telefono,
       Departamento: p.departamento,
       Tipo: p.tipo,
+      'Fecha Registro': formatearFecha(p.fecha),
       Estado: p.asistencia === 'Activo' ? 'Presente' : 'Ausente',
-      'Fecha Registro': p.fecha 
-        ? new Date(p.fecha.seconds ? p.fecha.seconds * 1000 : p.fecha).toLocaleDateString()
-        : 'Sin fecha'
     }));
 
     const headers = Object.keys(datosExport[0]).join(',');
@@ -39,145 +68,324 @@ const Reportes = ({ participantes }) => {
     link.click();
   };
 
+  const mostrarTelefono = (telefono) => {
+    if (!telefono) return '';
+    return telefono.includes('-')
+      ? telefono
+      : telefono.replace(/^(\d{4})(\d{4})$/, '$1-$2');
+  };
+
+  const limpiarFiltros = () => {
+    setFiltroTipo('Todos');
+    setFiltroDepartamento('Todos');
+    setFiltroAsistencia('Todos');
+    setBusqueda('');
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mt-8 px-4 md:px-0">
       {/* Filtros */}
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h3 className="text-lg font-semibold mb-4">Filtros</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Tipo</label>
-            <select 
-              value={filtroTipo} 
-              onChange={(e) => setFiltroTipo(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+        <div className="px-4 md:px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center space-x-3">
+              <Filter className="w-5 h-5 text-gray-600" />
+              <h3 className="text-lg font-semibold text-gray-900">Filtros de Búsqueda</h3>
+            </div>
+            <button
+              onClick={limpiarFiltros}
+              className="text-sm text-blue-600 hover:text-blue-800 font-medium transition-colors self-start sm:self-auto"
             >
-              {tipos.map(tipo => (
-                <option key={tipo} value={tipo}>{tipo}</option>
-              ))}
-            </select>
+              Limpiar filtros
+            </button>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Departamento</label>
-            <select 
-              value={filtroDepartamento} 
-              onChange={(e) => setFiltroDepartamento(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              {departamentos.map(dept => (
-                <option key={dept} value={dept}>{dept}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Asistencia</label>
-            <select 
-              value={filtroAsistencia} 
-              onChange={(e) => setFiltroAsistencia(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="Todos">Todos</option>
-              <option value="Presentes">Presentes</option>
-              <option value="Ausentes">Ausentes</option>
-            </select>
+        </div>
+        
+        <div className="p-4 md:p-6">
+          {/* Filtros en móvil: stack vertical */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+            <div className="space-y-2">
+              <label className="flex items-center text-sm font-medium text-gray-700">
+                <Tag className="w-4 h-4 mr-2" />
+                Tipo de Participante
+              </label>
+              <select 
+                value={filtroTipo} 
+                onChange={(e) => setFiltroTipo(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              >
+                {tiposFijos.map(tipo => (
+                  <option key={tipo} value={tipo}>{tipo}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="flex items-center text-sm font-medium text-gray-700">
+                <MapPin className="w-4 h-4 mr-2" />
+                Departamento
+              </label>
+              <select 
+                value={filtroDepartamento} 
+                onChange={(e) => setFiltroDepartamento(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              >
+                <option value="Todos">Todos</option>
+                {departamentosHonduras.map(dept => (
+                  <option key={dept} value={dept}>{dept}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="flex items-center text-sm font-medium text-gray-700">
+                <Eye className="w-4 h-4 mr-2" />
+                Estado de Asistencia
+              </label>
+              <select 
+                value={filtroAsistencia} 
+                onChange={(e) => setFiltroAsistencia(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              >
+                <option value="Todos">Todos los estados</option>
+                <option value="Presentes">Solo presentes</option>
+                <option value="Ausentes">Solo ausentes</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Resultados - Tabla en escritorio, cards en móvil */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-12">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
-          <h3 className="text-lg font-semibold">Resultados ({participantesFiltrados.length} participantes)</h3>
-          <button 
-            onClick={exportarExcel}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Exportar CSV
-          </button>
+      {/* Resultados */}
+      <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+        <div className="px-4 md:px-6 py-4 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex items-center space-x-3">
+              <Users className="w-5 h-5 text-gray-600" />
+              <h3 className="text-lg font-semibold text-gray-900">
+                Resultados ({participantesOrdenados.length})
+              </h3>
+            </div>
+            <button 
+              onClick={exportarExcel}
+              className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2.5 rounded-lg hover:bg-blue-700 transition-all duration-300 hover:scale-105 text-sm font-medium shadow-sm"
+              disabled={participantesOrdenados.length === 0}
+            >
+              <Download className="w-4 h-4" />
+              <span>Exportar CSV</span>
+            </button>
+          </div>
         </div>
         
-        {/* Tabla solo en md+ */}
-        <div className="overflow-x-auto hidden md:block">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-blue-50">
-                <th className="text-left p-3 font-semibold">Nombre</th>
-                <th className="text-left p-3 font-semibold">Teléfono</th>
-                <th className="text-left p-3 font-semibold">Tipo</th>
-                <th className="text-left p-3 font-semibold">Departamento</th>
-                <th className="text-left p-3 font-semibold">Fecha Registro</th>
-                <th className="text-left p-3 font-semibold">Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {participantesFiltrados.map((participante, index) => (
-                <tr key={participante.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                  <td className="p-3">{participante.nombre}</td>
-                  <td className="p-3">{participante.telefono}</td>
-                  <td className="p-3">{participante.tipo}</td>
-                  <td className="p-3">{participante.departamento}</td>
-                  <td className="p-3">
-                    {participante.fecha 
-                      ? new Date(participante.fecha.seconds ? participante.fecha.seconds * 1000 : participante.fecha).toLocaleDateString()
-                      : 'Sin fecha'
-                    }
-                  </td>
-                  <td className="p-3">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      participante.asistencia === 'Activo' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {participante.asistencia === 'Activo' ? 'Presente' : 'Ausente'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Cards en móvil */}
-        <div className="md:hidden space-y-4">
-          {participantesFiltrados.length === 0 ? (
-            <div className="p-8 text-center text-gray-500 bg-white rounded-lg shadow">
-              <p className="text-sm">No se encontraron participantes</p>
+        <div className="p-4 md:p-6">
+          {participantesOrdenados.length === 0 ? (
+            <div className="text-center py-12">
+              <div className="mx-auto w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No se encontraron resultados</h3>
+              <p className="text-gray-600">Prueba ajustando los filtros de búsqueda</p>
             </div>
           ) : (
-            participantesFiltrados.map((participante) => (
-              <div key={participante.id} className="bg-blue-50 rounded-lg shadow border p-4 space-y-2">
-                <div className="font-medium text-gray-900">{participante.nombre}</div>
-                <div className="text-gray-600 text-sm">
-                  <span className="font-semibold">Teléfono:</span> {participante.telefono}
-                </div>
-                <div className="text-gray-900 text-sm">
-                  <span className="font-semibold">Tipo:</span> {participante.tipo}
-                </div>
-                <div className="text-gray-600 text-sm">
-                  <span className="font-semibold">Departamento:</span> {participante.departamento}
-                </div>
-                <div className="text-gray-600 text-sm">
-                  <span className="font-semibold">Fecha Registro:</span>{" "}
-                  {participante.fecha 
-                    ? new Date(participante.fecha.seconds ? participante.fecha.seconds * 1000 : participante.fecha).toLocaleDateString()
-                    : 'Sin fecha'
-                  }
-                </div>
-                <div>
-                  <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
-                    participante.asistencia === 'Activo' 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {participante.asistencia === 'Activo' ? 'Presente' : 'Ausente'}
-                  </span>
-                </div>
+            <>
+              {/* Tabla para desktop */}
+              <div className="hidden lg:block overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
+                      <th className="text-left p-5 font-semibold text-gray-900">
+                        <div className="flex items-center">
+                          <Users className="w-4 h-4 mr-2 text-gray-600" />
+                          Participante
+                        </div>
+                      </th>
+                      <th className="text-left p-5 font-semibold text-gray-900">
+                        <div className="flex items-center">
+                          <Phone className="w-4 h-4 mr-2 text-gray-600" />
+                          Teléfono
+                        </div>
+                      </th>
+                      <th className="text-left p-5 font-semibold text-gray-900">
+                        <div className="flex items-center">
+                          <Tag className="w-4 h-4 mr-2 text-gray-600" />
+                          Tipo
+                        </div>
+                      </th>
+                      <th className="text-left p-5 font-semibold text-gray-900">
+                        <div className="flex items-center">
+                          <MapPin className="w-4 h-4 mr-2 text-gray-600" />
+                          Departamento
+                        </div>
+                      </th>
+                      <th className="text-left p-5 font-semibold text-gray-900">
+                        <div className="flex items-center">
+                          <Calendar className="w-4 h-4 mr-2 text-gray-600" />
+                          Fecha Registro
+                        </div>
+                      </th>
+                      <th className="text-center p-5 font-semibold text-gray-900">
+                        <div className="flex items-center justify-center">
+                          <Eye className="w-4 h-4 mr-2 text-gray-600" />
+                          Estado
+                        </div>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {participantesOrdenados.map((participante, index) => (
+                      <tr 
+                        key={participante.id} 
+                        className={`border-b border-gray-100 transition-all duration-200 ${
+                          index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
+                        }`}
+                      >
+                        <td className="p-5">
+                          <div className="font-semibold text-gray-900">
+                            {participante.nombre}
+                          </div>
+                        </td>
+                        <td className="p-5">
+                          <div className="text-gray-600 font-medium">
+                            {mostrarTelefono(participante.telefono)}
+                          </div>
+                        </td>
+                        <td className="p-5">
+                          <div className="font-semibold text-gray-900">
+                            {participante.tipo}
+                          </div>
+                        </td>
+                        <td className="p-5">
+                          <div className="text-gray-700 font-medium">
+                            {participante.departamento}
+                          </div>
+                        </td>
+                        <td className="p-5">
+                          <div className="text-gray-600">
+                            {formatearFecha(participante.fecha)}
+                          </div>
+                        </td>
+                        <td className="p-5 text-center">
+                          <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-bold transition-all duration-200 hover:scale-105 shadow-sm ${
+                            participante.asistencia === 'Activo' 
+                              ? 'bg-green-100 text-green-800 border-2 border-green-300 hover:bg-green-200' 
+                              : 'bg-red-100 text-red-800 border-2 border-red-300 hover:bg-red-200'
+                          }`}>
+                            {participante.asistencia === 'Activo' ? (
+                              <span className="flex items-center">
+                                <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+                                Presente
+                              </span>
+                            ) : (
+                              <span className="flex items-center">
+                                <span className="w-2 h-2 bg-red-500 rounded-full mr-2"></span>
+                                Ausente
+                              </span>
+                            )}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            ))
+
+              {/* Cards para móvil y tablet */}
+              <div className="lg:hidden space-y-4">
+                {participantesOrdenados.map((participante) => (
+                  <div
+                    key={participante.id}
+                    className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
+                  >
+                    {/* Header de la card */}
+                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-5 py-4 border-b border-gray-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-bold text-gray-900 text-lg mb-1 truncate">
+                            {participante.nombre}
+                          </h4>
+                          <p className="text-gray-600 text-sm font-medium">
+                            {participante.tipo}
+                          </p>
+                        </div>
+                        {/* Estado */}
+                        <div className="ml-3">
+                          {participante.asistencia === 'Activo' ? (
+                            <div className="flex items-center bg-green-100 text-green-800 px-3 py-1.5 rounded-full border border-green-200">
+                              <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                              <span className="text-xs font-bold">Presente</span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center bg-red-100 text-red-800 px-3 py-1.5 rounded-full border border-red-200">
+                              <div className="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
+                              <span className="text-xs font-bold">Ausente</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Contenido de la card */}
+                    <div className="p-5">
+                      <div className="space-y-4">
+                        {/* Teléfono */}
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
+                            <Phone className="w-4 h-4 text-blue-600" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-xs text-gray-500 mb-0.5">Teléfono</p>
+                            <p className="text-gray-900 font-semibold font-mono">
+                              {mostrarTelefono(participante.telefono)}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Departamento */}
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center mr-4">
+                            <MapPin className="w-4 h-4 text-green-600" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-xs text-gray-500 mb-0.5">Departamento</p>
+                            <p className="text-gray-900 font-semibold">
+                              {participante.departamento}
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Fecha de registro */}
+                        <div className="flex items-center pt-2 border-t border-gray-100">
+                          <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
+                            <Calendar className="w-4 h-4 text-purple-600" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-xs text-gray-500 mb-0.5">Fecha de Registro</p>
+                            <p className="text-gray-700 font-medium">
+                              {formatearFecha(participante.fecha)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </div>
-      {/* Espacio extra antes del footer */}
+      
+      {/* Contador final para móvil */}
+      {participantesOrdenados.length > 0 && (
+        <div className="lg:hidden text-center">
+          <div className="inline-flex items-center bg-white px-4 py-2 rounded-full shadow-sm border border-gray-200">
+            <span className="text-sm text-gray-600 font-medium">
+              {participantesOrdenados.length} participante{participantesOrdenados.length !== 1 ? 's' : ''} encontrado{participantesOrdenados.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+        </div>
+      )}
+      
       <div className="h-12" />
     </div>
   );
