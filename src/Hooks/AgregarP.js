@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Plus, X, User, MapPin, Briefcase, Phone } from "lucide-react";
 import toast from "react-hot-toast";
 import Select, { components } from "react-select";
 
 const departamentosHonduras = [
-  "Atlántida", "Choluteca", "Colón", "Comayagua", "Copán", "Cortés", 
-  "El Paraíso", "Francisco Morazán", "Gracias a Dios", "Intibucá", 
-  "Islas de la Bahía", "La Paz", "Lempira", "Ocotepeque", "Olancho", 
+  "Atlántida", "Choluteca", "Colón", "Comayagua", "Copán", "Cortés",
+  "El Paraíso", "Francisco Morazán", "Gracias a Dios", "Intibucá",
+  "Islas de la Bahía", "La Paz", "Lempira", "Ocotepeque", "Olancho",
   "Santa Bárbara", "Valle", "Yoro"
 ];
 
@@ -80,6 +80,12 @@ const AgregarP = ({ isOpen, onClose, onAgregar }) => {
     telefono: ""
   });
 
+  // Hacer handleCancelar estable para useEffect
+  const handleCancelar = useCallback(() => {
+    setDatos({ nombre: "", departamento: "", tipo: "", telefono: "" });
+    onClose();
+  }, [onClose]);
+
   useEffect(() => {
     const handleEsc = (e) => {
       if (e.key === 'Escape') handleCancelar();
@@ -92,7 +98,7 @@ const AgregarP = ({ isOpen, onClose, onAgregar }) => {
       document.removeEventListener('keydown', handleEsc);
       document.body.style.overflow = '';
     };
-  }, [isOpen]);
+  }, [isOpen, handleCancelar]);
 
   const handleTelefonoChange = (e) => {
     let value = e.target.value.replace(/\D/g, "");
@@ -120,11 +126,6 @@ const AgregarP = ({ isOpen, onClose, onAgregar }) => {
     onClose();
   };
 
-  const handleCancelar = () => {
-    setDatos({ nombre: "", departamento: "", tipo: "", telefono: "" });
-    onClose();
-  };
-
   const handleBackdropClick = (e) => {
     if (e.target === e.currentTarget) handleCancelar();
   };
@@ -132,7 +133,7 @@ const AgregarP = ({ isOpen, onClose, onAgregar }) => {
   if (!isOpen) return null;
 
   return (
-    <div 
+    <div
       className="fixed inset-0 bg-black/60 backdrop-blur-sm flex justify-center items-center z-50 p-4"
       onClick={handleBackdropClick}
     >
@@ -175,7 +176,7 @@ const AgregarP = ({ isOpen, onClose, onAgregar }) => {
             </div>
           </div>
 
-          {/* Departamento con React Select e icono al principio */}
+          {/* Departamento */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Departamento
@@ -194,9 +195,7 @@ const AgregarP = ({ isOpen, onClose, onAgregar }) => {
                 placeholder="Seleccione un departamento"
                 menuPlacement="auto"
                 styles={customSelectStyles}
-                components={{
-                  Control: CustomControl,
-                }}
+                components={{ Control: CustomControl }}
               />
             </div>
           </div>
@@ -236,7 +235,7 @@ const AgregarP = ({ isOpen, onClose, onAgregar }) => {
           </div>
         </div>
 
-        {/* Footer con botones */}
+        {/* Footer */}
         <div className="p-6 pt-4 border-t border-gray-100 flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
           <button
             onClick={handleCancelar}

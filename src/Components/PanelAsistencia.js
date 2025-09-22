@@ -79,16 +79,10 @@ const PanelAsistencia = ({ participantes = [], busqueda = "", setBusqueda }) => 
     }
   };
 
-  // Resumen
-  const presentes = participantesFiltrados.filter(
-    (p) => p.asistencia === "Activo"
-  ).length;
-  const total = participantesFiltrados.length;
-
- return (
-  <div className="bg-gray-50">
-    <div className="p-4 md:p-8 max-w-6xl mx-auto">
-      {/* Header: Buscador y botón en la misma fila */}
+  return (
+    <div className="bg-gray-50">
+      <div className="p-4 md:p-8 max-w-6xl mx-auto">
+        {/* Header: Buscador y botón en la misma fila */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
         {/* Buscador */}
         <div className="relative flex-1 md:max-w-md">
