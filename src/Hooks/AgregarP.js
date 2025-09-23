@@ -87,7 +87,7 @@ const customSelectStyles = {
   }),
 };
 
-const AgregarP = ({ isOpen, onClose, onAgregar }) => {
+const AgregarP = ({ isOpen, onClose, onAgregar, participantes = [] }) => {
   const [datos, setDatos] = useState({
     nombre: "",
     departamento: "",
@@ -131,9 +131,26 @@ const AgregarP = ({ isOpen, onClose, onAgregar }) => {
       toast.error("El teléfono debe tener 8 dígitos (ej: 9865-8758).");
       return;
     }
+
+    //validacion de unicidad 
+    const telefonoSinGuion = datos.telefono.replace("-", "");
+    const nombreExiste = participantes.some(
+      (p) => p.nombre.trim().toLowerCase() === datos.nombre.trim().toLowerCase()
+    );
+    const telefonoExiste = participantes.some(
+      (p) => p.telefono.replace("-", "") === telefonoSinGuion
+    );
+    if (nombreExiste) {
+      toast.error("¡Ya existe un participante con ese nombre!");
+      return;
+    }
+    if (telefonoExiste) {
+      toast.error("¡Ya existe un participante con ese número de teléfono!");
+      return;
+    }
     const participante = {
       ...datos,
-      telefono: datos.telefono.replace("-", ""), 
+      telefono: telefonoSinGuion, 
       fecha: new Date().toISOString()
     };
     onAgregar(participante);

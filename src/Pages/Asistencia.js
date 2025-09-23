@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
-import { collection, getDocs, updateDoc, doc, addDoc } from "firebase/firestore";
+import { collection, onSnapshot, updateDoc, doc, addDoc } from "firebase/firestore";
 import { db } from "../Firebase/Firebase";
 import Navigation from "../Components/Navigation";
 import PanelAsistencia from "../Components/PanelAsistencia";
 import Dashboard from "../Components/Dashboard";
 import Reportes from "../Components/Reportes";
 import toast from "react-hot-toast";
-import {  CalendarCheck } from "lucide-react";
+import { CalendarCheck } from "lucide-react";
 
 const Asistencia = () => {
   const [participantes, setParticipantes] = useState([]);
@@ -14,49 +14,25 @@ const Asistencia = () => {
   const [activeTab, setActiveTab] = useState("lista");
   const [cargando, setCargando] = useState(true);
 
-  // Inicializar asistencia si falta el campo
-  const inicializarAsistencia = async () => {
-    try {
-      const querySnapshot = await getDocs(collection(db, "participantes"));
-      const promises = querySnapshot.docs.map(async (document) => {
-        const data = document.data();
-        if (!("asistencia" in data)) {
-          await updateDoc(doc(db, "participantes", document.id), {
-            asistencia: "No Activo",
-          });
-        }
-      });
-      await Promise.all(promises);
-    } catch (error) {
-      console.error("Error inicializando asistencia:", error);
-      toast.error("Error al inicializar datos");
-    }
-  };
-
-  // Traer participantes de Firebase
-  const cargarParticipantes = async () => {
-    try {
-      setCargando(true);
-      const querySnapshot = await getDocs(collection(db, "participantes"));
-      const datos = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-      setParticipantes(datos);
-    } catch (error) {
-      console.error("Error cargando participantes:", error);
-      toast.error("Error al cargar participantes");
-    } finally {
-      setCargando(false);
-    }
-  };
-
+  // Listener en tiempo real
   useEffect(() => {
-    const cargarYActualizar = async () => {
-      await inicializarAsistencia();
-      await cargarParticipantes();
-    };
-    cargarYActualizar();
+    setCargando(true);
+    const unsubscribe = onSnapshot(
+      collection(db, "participantes"),
+      (snapshot) => {
+        const datos = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setParticipantes(datos);
+        setCargando(false);
+      },
+      (error) => {
+        toast.error("Error al sincronizar participantes");
+        setCargando(false);
+      }
+    );
+    return () => unsubscribe();
   }, []);
 
   // Marcar asistencia como "Activo"
@@ -65,14 +41,8 @@ const Asistencia = () => {
       await updateDoc(doc(db, "participantes", id), {
         asistencia: "Activo",
       });
-
-      setParticipantes((prev) =>
-        prev.map((p) => (p.id === id ? { ...p, asistencia: "Activo" } : p))
-      );
-
       toast.success("¡Asistencia marcada correctamente!");
     } catch (error) {
-      console.error("Error marcando asistencia:", error);
       toast.error("Error al marcar asistencia. Intente nuevamente.");
     }
   };
@@ -83,11 +53,11 @@ const Asistencia = () => {
       const participanteNuevo = {
         ...nuevo,
         asistencia: "No Activo",
+        color: null, 
         fecha: new Date().toISOString(),
       };
       await addDoc(collection(db, "participantes"), participanteNuevo);
-      await cargarParticipantes();
-      toast.success("¡Participante creado correctamente!");
+      // No necesitas recargar, el listener lo hará automáticamente
     } catch (error) {
       toast.error("Error al crear participante.");
     }

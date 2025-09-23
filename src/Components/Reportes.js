@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Filter, Search, Tag, MapPin, Eye, Users, Download, Phone, Calendar } from "lucide-react";
+import { Filter, Search, Tag, MapPin, Eye, Users, Download, Phone, Calendar, Palette } from "lucide-react";
+import * as XLSX from "xlsx";
 
 const departamentosHonduras = [
   "Atlántida", "Choluteca", "Colón", "Comayagua", "Copán", "Cortés",
@@ -21,6 +22,20 @@ const formatearFecha = (fecha) => {
   const mes = String(dateObj.getMonth() + 1).padStart(2, '0');
   const anio = dateObj.getFullYear();
   return `${dia}/${mes}/${anio}`;
+};
+
+const colorNombre = (color) => {
+  if (!color) return "N/T";
+  return color.charAt(0).toUpperCase() + color.slice(1);
+};
+
+const colorBg = {
+  verde: "bg-green-500 text-white",
+  amarillo: "bg-yellow-400 text-gray-900",
+  anaranjado: "bg-orange-500 text-white",
+  negro: "bg-black text-white",
+  rojo: "bg-red-500 text-white",
+  azul: "bg-blue-600 text-white",
 };
 
 const Reportes = ({ participantes }) => {
@@ -46,26 +61,46 @@ const Reportes = ({ participantes }) => {
     a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
   );
 
+  // Exportar a Excel con encabezados en azul y negrita
   const exportarExcel = () => {
     if (participantesOrdenados.length === 0) return;
     const datosExport = participantesOrdenados.map(p => ({
       Nombre: p.nombre,
-      Teléfono: p.telefono,
+      Teléfono: mostrarTelefono(p.telefono),
       Departamento: p.departamento,
       Tipo: p.tipo,
+      Color: colorNombre(p.color),
       'Fecha Registro': formatearFecha(p.fecha),
       Estado: p.asistencia === 'Activo' ? 'Presente' : 'Ausente',
     }));
 
-    const headers = Object.keys(datosExport[0]).join(',');
-    const csvContent = datosExport.map(row => Object.values(row).join(',')).join('\n');
-    const csv = headers + '\n' + csvContent;
+    // Crear hoja y libro (sin origin: "A2")
+    const ws = XLSX.utils.json_to_sheet(datosExport);
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `reporte_asistencia_${new Date().toLocaleDateString()}.csv`;
-    link.click();
+    // Aplica estilos a los encabezados (negrita y color)
+    const headers = [
+      "Nombre",
+      "Teléfono",
+      "Departamento",
+      "Tipo",
+      "Color",
+      "Fecha Registro",
+      "Estado"
+    ];
+    headers.forEach((_, idx) => {
+      const cell = ws[XLSX.utils.encode_cell({ r: 0, c: idx })];
+      if (cell) {
+        cell.s = {
+          font: { bold: true, color: { rgb: "FFFFFF" } },
+          fill: { fgColor: { rgb: "2563EB" } }
+        };
+      }
+    });
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Reporte");
+
+    XLSX.writeFile(wb, `Reporte_asistencia_${new Date().toLocaleDateString()}.xlsx`);
   };
 
   const mostrarTelefono = (telefono) => {
@@ -172,7 +207,7 @@ const Reportes = ({ participantes }) => {
               disabled={participantesOrdenados.length === 0}
             >
               <Download className="w-4 h-4" />
-              <span>Exportar CSV</span>
+              <span>Exportar Excel</span>
             </button>
           </div>
         </div>
@@ -192,40 +227,46 @@ const Reportes = ({ participantes }) => {
               <div className="hidden lg:block overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="bg-gradient-to-r from-gray-50 to-gray-100 border-b-2 border-gray-200">
-                      <th className="text-left p-5 font-semibold text-gray-900">
+                    <tr>
+                      <th className="text-left p-5 font-semibold text-gray-800 bg-blue-50">
                         <div className="flex items-center">
-                          <Users className="w-4 h-4 mr-2 text-gray-600" />
+                          <Users className="w-4 h-4 mr-2 text-gray-800" />
                           Participante
                         </div>
                       </th>
-                      <th className="text-left p-5 font-semibold text-gray-900">
+                      <th className="text-left p-5 font-semibold text-gray-800 bg-blue-50">
                         <div className="flex items-center">
-                          <Phone className="w-4 h-4 mr-2 text-gray-600" />
+                          <Phone className="w-4 h-4 mr-2 text-gray-800" />
                           Teléfono
                         </div>
                       </th>
-                      <th className="text-left p-5 font-semibold text-gray-900">
+                      <th className="text-left p-5 font-semibold text-gray-800 bg-blue-50">
                         <div className="flex items-center">
-                          <Tag className="w-4 h-4 mr-2 text-gray-600" />
+                          <Tag className="w-4 h-4 mr-2 text-gray-800" />
                           Tipo
                         </div>
                       </th>
-                      <th className="text-left p-5 font-semibold text-gray-900">
+                      <th className="text-left p-5 font-semibold text-gray-800 bg-blue-50">
                         <div className="flex items-center">
-                          <MapPin className="w-4 h-4 mr-2 text-gray-600" />
+                          <MapPin className="w-4 h-4 mr-2 text-gray-800" />
                           Departamento
                         </div>
                       </th>
-                      <th className="text-left p-5 font-semibold text-gray-900">
+                      <th className="text-center p-5 font-semibold text-gray-800 bg-blue-50">
+                        <div className="flex items-center justify-center">
+                          <Palette className="w-4 h-4 mr-2 text-gray-800" />
+                          Color
+                        </div>
+                      </th>
+                      <th className="text-left p-5 font-semibold text-gray-800 bg-blue-50">
                         <div className="flex items-center">
-                          <Calendar className="w-4 h-4 mr-2 text-gray-600" />
+                          <Calendar className="w-4 h-4 mr-2 text-gray-800" />
                           Fecha Registro
                         </div>
                       </th>
-                      <th className="text-center p-5 font-semibold text-gray-900">
+                      <th className="text-center p-5 font-semibold text-gray-800 bg-blue-50">
                         <div className="flex items-center justify-center">
-                          <Eye className="w-4 h-4 mr-2 text-gray-600" />
+                          <Eye className="w-4 h-4 mr-2 text-gray-800" />
                           Estado
                         </div>
                       </th>
@@ -258,6 +299,11 @@ const Reportes = ({ participantes }) => {
                           <div className="text-gray-700 font-medium">
                             {participante.departamento}
                           </div>
+                        </td>
+                        <td className="p-5">
+                          <span className={`px-3 py-1 rounded-lg text-xs font-semibold ${colorBg[participante.color] || "bg-gray-100 text-gray-700"}`}>
+                            {colorNombre(participante.color)}
+                          </span>
                         </td>
                         <td className="p-5">
                           <div className="text-gray-600">
@@ -352,6 +398,18 @@ const Reportes = ({ participantes }) => {
                             </p>
                           </div>
                         </div>
+                      {/* Color */}
+                      <div className="flex items-center">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center mr-4 ${colorBg[participante.color] || "bg-gray-100"}`}>
+                          <Palette className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1 flex flex-col">
+                          <p className="text-xs text-gray-500 mb-0.5">Color</p>
+                          <span className="text-xs font-semibold mt-1">
+                            {colorNombre(participante.color)}
+                          </span>
+                        </div>
+                      </div>
 
                         {/* Fecha de registro */}
                         <div className="flex items-center pt-2 border-t border-gray-100">
