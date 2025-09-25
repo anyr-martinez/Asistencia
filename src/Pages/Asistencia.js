@@ -18,7 +18,7 @@ const Asistencia = () => {
   useEffect(() => {
     setCargando(true);
     const unsubscribe = onSnapshot(
-      collection(db, "participantes"),
+      collection(db, "Viveros2025"),
       (snapshot) => {
         const datos = snapshot.docs.map((doc) => ({
           id: doc.id,
@@ -56,7 +56,7 @@ const Asistencia = () => {
         color: null, 
         fecha: new Date().toISOString(),
       };
-      await addDoc(collection(db, "participantes"), participanteNuevo);
+      await addDoc(collection(db, "Viveros2025"), participanteNuevo);
       // No necesitas recargar, el listener lo hará automáticamente
     } catch (error) {
       toast.error("Error al crear participante.");

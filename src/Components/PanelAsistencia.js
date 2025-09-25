@@ -49,7 +49,7 @@ const PanelAsistencia = ({ participantes = [], busqueda = "", setBusqueda }) => 
         color: null,
         fecha: new Date().toISOString(),
       };
-      await addDoc(collection(db, "participantes"), participanteNuevo);
+      await addDoc(collection(db, "Viveros2025"), participanteNuevo);
     } catch (error) {
       toast.error("Error al crear participante.");
     }
