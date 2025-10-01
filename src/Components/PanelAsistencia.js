@@ -37,7 +37,7 @@ const PanelAsistencia = ({ participantes = [], busqueda = "", setBusqueda }) => 
   const participantesFiltrados = listaOrdenada.filter(
     (p) =>
       p.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-      p.telefono.includes(busqueda)
+      (p.telefono && p.telefono.includes(busqueda))
   );
 
   // Agregar participante
@@ -60,11 +60,11 @@ const PanelAsistencia = ({ participantes = [], busqueda = "", setBusqueda }) => 
     setColorModal({ open: true, id });
   };
 
-  // Guardar color y marcar asistencia
+  // Guardar color y marcar asistencia (CORREGIDO: usa Viveros2025)
   const marcarConColor = async (color) => {
     const id = colorModal.id;
     try {
-      await updateDoc(doc(db, "participantes", id), {
+      await updateDoc(doc(db, "Viveros2025", id), {
         asistencia: "Activo",
         color: color,
       });
@@ -81,11 +81,11 @@ const PanelAsistencia = ({ participantes = [], busqueda = "", setBusqueda }) => 
     setConfirmData({ open: true, id });
   };
 
-  // Confirmar desmarcar asistencia
+  // Confirmar desmarcar asistencia (CORREGIDO: usa Viveros2025)
   const confirmarDesmarcar = async () => {
     const id = confirmData.id;
     try {
-      await updateDoc(doc(db, "participantes", id), {
+      await updateDoc(doc(db, "Viveros2025", id), {
         asistencia: "No Activo",
         color: null,
       });
@@ -167,10 +167,12 @@ const PanelAsistencia = ({ participantes = [], busqueda = "", setBusqueda }) => 
                   >
                     <div className="col-span-3 font-semibold text-gray-900">{p.nombre}</div>
                     <div className="col-span-2 text-gray-700">
-                      <span className="px-3 py-1 bg-gray-100 rounded-lg text-sm">{p.departamento}</span>
+                      <span className="px-3 py-1 bg-gray-100 rounded-lg text-sm">{p.departamento || ""}</span>
                     </div>
-                    <div className="col-span-2 text-gray-600 font-medium">{p.tipo}</div>
-                    <div className="col-span-2 text-gray-600 font-mono">{p.telefono.replace(/(\d{4})(\d{4})/, "$1-$2")}</div>
+                    <div className="col-span-2 text-gray-600 font-medium">{p.tipo || ""}</div>
+                    <div className="col-span-2 text-gray-600 font-mono">
+                      {p.telefono ? p.telefono.replace(/(\d{4})(\d{4})/, "$1-$2") : ""}
+                    </div>
                     <div className="col-span-2 flex justify-center">
                       {p.asistencia === "Activo" ? (
                         <button
@@ -224,7 +226,6 @@ const PanelAsistencia = ({ participantes = [], busqueda = "", setBusqueda }) => 
           </div>
         </div>
 
-
       {/* Cards móvil */}
         <div className="lg:hidden">
           {participantesFiltrados.length === 0 ? (
@@ -249,7 +250,7 @@ const PanelAsistencia = ({ participantes = [], busqueda = "", setBusqueda }) => 
                   <div className="bg-gradient-to-r from-gray-50 to-gray-100 px-5 py-4 flex justify-between items-center">
                     <div>
                       <h3 className="font-bold text-gray-900 text-lg truncate">{participante.nombre}</h3>
-                      <p className="text-gray-600 text-sm font-medium">{participante.tipo}</p>
+                      <p className="text-gray-600 text-sm font-medium">{participante.tipo || ""}</p>
                     </div>
                     <div>
                       {participante.color ? (
@@ -269,7 +270,7 @@ const PanelAsistencia = ({ participantes = [], busqueda = "", setBusqueda }) => 
                           <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3">📍</div>
                           <div>
                             <p className="text-xs text-gray-500 mb-0.5">Departamento</p>
-                            <p className="text-gray-900 font-semibold text-sm">{participante.departamento}</p>
+                            <p className="text-gray-900 font-semibold text-sm">{participante.departamento || ""}</p>
                           </div>
                         </div>
                       </div>
@@ -278,7 +279,9 @@ const PanelAsistencia = ({ participantes = [], busqueda = "", setBusqueda }) => 
                           <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">📞</div>
                           <div>
                             <p className="text-xs text-gray-500 mb-0.5">Teléfono</p>
-                            <p className="text-gray-900 font-semibold text-sm font-mono">{participante.telefono.replace(/(\d{4})(\d{4})/, "$1-$2")}</p>
+                            <p className="text-gray-900 font-semibold text-sm font-mono">
+                              {participante.telefono ? participante.telefono.replace(/(\d{4})(\d{4})/, "$1-$2") : ""}
+                            </p>
                           </div>
                         </div>
                       </div>
