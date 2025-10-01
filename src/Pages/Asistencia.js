@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { collection, onSnapshot, updateDoc, doc, addDoc } from "firebase/firestore";
+import { collection, onSnapshot, addDoc, getDocs, updateDoc, doc } from "firebase/firestore";
 import { db } from "../Firebase/Firebase";
 import Navigation from "../Components/Navigation";
 import PanelAsistencia from "../Components/PanelAsistencia";
@@ -35,25 +35,13 @@ const Asistencia = () => {
     return () => unsubscribe();
   }, []);
 
-  // Marcar asistencia como "Activo"
-  const marcarAsistencia = async (id) => {
-    try {
-      await updateDoc(doc(db, "participantes", id), {
-        asistencia: "Activo",
-      });
-      toast.success("¡Asistencia marcada correctamente!");
-    } catch (error) {
-      toast.error("Error al marcar asistencia. Intente nuevamente.");
-    }
-  };
-
   // AGREGAR PARTICIPANTE
   const agregarParticipante = async (nuevo) => {
     try {
       const participanteNuevo = {
         ...nuevo,
         asistencia: "No Activo",
-        color: null, 
+        color: null,
         fecha: new Date().toISOString(),
       };
       await addDoc(collection(db, "Viveros2025"), participanteNuevo);
@@ -61,6 +49,21 @@ const Asistencia = () => {
     } catch (error) {
       toast.error("Error al crear participante.");
     }
+  };
+
+  // BOTÓN TEMPORAL PARA AGREGAR CAMPO COLOR A TODOS (DESHABILITADO)
+  const agregarCampoColorATodos = async () => {
+    alert("Este botón ha sido deshabilitado.");
+    return;
+    // const snapshot = await getDocs(collection(db, "Viveros2025"));
+    // let actualizados = 0;
+    // for (const documento of snapshot.docs) {
+    //   if (!documento.data().hasOwnProperty("color")) {
+    //     await updateDoc(doc(db, "Viveros2025", documento.id), { color: null });
+    //     actualizados++;
+    //   }
+    // }
+    // alert(`Campo 'color' agregado a ${actualizados} participantes.`);
   };
 
   if (cargando) {
@@ -93,49 +96,69 @@ const Asistencia = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      {/* Header con glassmorphism */}
-      <div className="fixed top-0 left-0 w-full z-40 bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 md:px-6 py-4 flex justify-center items-center">
-          <div className="flex items-center gap-2">
-            <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2 md:p-3 rounded-xl shadow-lg">
-              <CalendarCheck className="w-6 h-6 md:w-7 md:h-7 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 text-center">
-                Control de Asistencia
-              </h1>
+    <>
+      {/* 
+      <button
+        onClick={agregarCampoColorATodos}
+        style={{
+          position: "fixed",
+          top: 20,
+          right: 20,
+          zIndex: 9999,
+          background: "#2563eb",
+          color: "#fff",
+          padding: "10px 16px",
+          borderRadius: 8,
+          fontWeight: "bold",
+          boxShadow: "0 2px 8px #0002"
+        }}
+      >
+        Agregar campo color a todos
+      </button>
+      */}
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+        {/* Header con glassmorphism */}
+        <div className="fixed top-0 left-0 w-full z-40 bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm">
+          <div className="max-w-6xl mx-auto px-4 md:px-6 py-4 flex justify-center items-center">
+            <div className="flex items-center gap-2">
+              <div className="bg-gradient-to-br from-blue-500 to-indigo-600 p-2 md:p-3 rounded-xl shadow-lg">
+                <CalendarCheck className="w-6 h-6 md:w-7 md:h-7 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 text-center">
+                  Control de Asistencia
+                </h1>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Navigation */}
-      <div className="fixed top-[84px] md:top-[80px] left-0 w-full z-30 bg-transparent">
-        <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
-      </div>
+        {/* Navigation */}
+        <div className="fixed top-[84px] md:top-[80px] left-0 w-full z-30 bg-transparent">
+          <Navigation activeTab={activeTab} setActiveTab={setActiveTab} />
+        </div>
 
-      {/* Contenido principal */}
-      <div className="pt-[140px] md:pt-[135px]">
-        <div className="max-w-6xl mx-auto px-4 md:px-6 pb-10">
-          {activeTab === "lista" && (
-            <PanelAsistencia
-              participantes={participantes}
-              marcarAsistencia={marcarAsistencia}
-              busqueda={busqueda}
-              setBusqueda={setBusqueda}
-              agregarParticipante={agregarParticipante}
-            />
-          )}
+        {/* Contenido principal */}
+        <div className="pt-[140px] md:pt-[135px]">
+          <div className="max-w-6xl mx-auto px-4 md:px-6 pb-10">
+            {activeTab === "lista" && (
+              <PanelAsistencia
+                participantes={participantes}
+                busqueda={busqueda}
+                setBusqueda={setBusqueda}
+                agregarParticipante={agregarParticipante}
+              />
+            )}
 
-          {activeTab === "dashboard" && (
-            <Dashboard participantes={participantes} />
-          )}
+            {activeTab === "dashboard" && (
+              <Dashboard participantes={participantes} />
+            )}
 
-          {activeTab === "reportes" && <Reportes participantes={participantes} />}
+            {activeTab === "reportes" && <Reportes participantes={participantes} />}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 
